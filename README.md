@@ -1,6 +1,4 @@
-This repository contains R code related to the probability of improved prediction (PIP), which is a newly introduced statistical concept for model comparison. 
-
-In general, the PIP is a probabilistic measure for directly comparing two competing models. Based on a user-defined loss function, this is achieved by quantifying the frequency of instances 
+This repository contains R code related to the probability of improved prediction (PIP), which is a newly introduced statistical concept for model comparison. In general, the PIP is a probabilistic measure for directly comparing two competing models. Based on a user-defined loss function, this is achieved by quantifying the frequency of instances 
 that one model gives better predictions than the other model. 
 
 Two papers were prepared, for which this repository contains the R code related to their respective data examples.
