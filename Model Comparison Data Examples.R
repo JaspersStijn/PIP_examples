@@ -14,7 +14,7 @@ library(gbm)
 library(caret)
 library(mlbench)
 
-source("Functions.R")
+source("Functions_paper2.R")
 
 # Example 1: Stack Loss data
 
