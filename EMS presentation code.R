@@ -14,7 +14,7 @@ library(gbm)
 library(caret)
 library(mlbench)
 
-source("Functions.R")
+source("R/Functions_paper2.R")
 
 # Example 1: Stack Loss data
 
@@ -27,12 +27,12 @@ y = stackloss_use$y
 X = as.matrix(stackloss_use[,2:5])
 dat = data.frame(y,X)
 
-# Visualisations and summary measures presentation EMS 
+# Visualisations and summary measures presentation EMS
 
 names(dat)[2:5] = paste0('X',c(0,1,2,3))
 dat$id = rownames(dat)
 
-dat  = dat %>% mutate(Outlier = dplyr::case_when(!(dat$id %in% c(1,3,4,21)) ~ "No", 
+dat  = dat %>% mutate(Outlier = dplyr::case_when(!(dat$id %in% c(1,3,4,21)) ~ "No",
                                                  dat$id %in% c(1,3,4,21) ~ "Yes"))
 
 p1b = ggplot(data=dat, aes(x= X1, y= y))+

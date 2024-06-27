@@ -14,7 +14,7 @@ library(gbm)
 library(caret)
 library(mlbench)
 
-source("Functions_paper2.R")
+source("R/Functions_paper2.R")
 
 # Example 1: Stack Loss data
 
@@ -54,17 +54,17 @@ print(pips)
 
 if(max(pips,na.rm=TRUE)>0.5){
   new_mod0 = models[1:3][which.max(pips)][[1]]
-  
+
   comparators = models[4:6][unlist(lapply(lapply(models[4:6], function(x) attr(terms(x), "term.labels")),function(x) attr(terms(new_mod0), "term.labels") %in%x))]
   pips = c()
   for(mod in comparators){
     pips = c(pips,mean(PIP_stratified_bs_robust_models(dat,K,new_mod0,mod,4,m)$pip_bs))
   }
   print(pips)
-  
+
   if(max(pips,na.rm=TRUE)>0.5){
     new_mod0 = comparators[which.max(pips)][[1]]
-    
+
     comparator = models[7][[1]]
     pips = mean(PIP_stratified_bs_robust_models(dat,K,new_mod0,comparator,4,m)$pip_bs)
     if(pips>0.5) new_mod0 = comparator
@@ -74,9 +74,9 @@ print(pips)
 
 # The final selected model y ~ X2 + X3
 selected = new_mod0
-print(selected)  
+print(selected)
 
-# Application 2: Los Angeles Ozone Pollution Data 
+# Application 2: Los Angeles Ozone Pollution Data
 
 data("Ozone")
 ozone_use = Ozone%>%mutate(y=V4,X1=V8,X2 =V10,X3=V11,X4=V13,
@@ -103,7 +103,7 @@ ozone_use = Ozone%>%mutate(y=V4,X1=V8,X2 =V10,X3=V11,X4=V13,
 # 10 predictoren: 1  8 12 14 17 23 34 40 41 43
 # 23 predictoren:  1 4  5  6  7  8  9 11 12 13 14 15 17 24 29 31 32 33 39 40 41 42 43
 
-design = read.table("Ozone_design.txt",sep='\t',header=TRUE)
+design = read.table("R/Ozone_design.txt",sep='\t',header=TRUE)
 vars = names(design)[2:46]
 
 mod7_vars = vars[c(12, 15, 27, 29, 33, 43)]
@@ -268,7 +268,7 @@ pips = c()
 for(mod in c(formula7e,formula7h)){
   pips = c(pips,mean(PIP_stratified_bs_gbm(ozone_use,K,formula6c,mod,4,200)$pip_bs))
 }
-print(pips) # no further additions 
+print(pips) # no further additions
 
 ## Selected model
 par(mfrow=c(1,2))
@@ -286,7 +286,7 @@ plot(preds_gbm_compare,design$x,col="red")
 title(paste0("Pearson cor: ",cor(preds_gbm_compare,design$X)))
 
 
-# Compare full linear model with selected GBM 
+# Compare full linear model with selected GBM
 
 set.seed(1988)
 comp_linear_gbm = PIP_stratified_bs_robust_vs_gbm(ozone_use_lm,K,as.formula("y~(X1+X2+X3+X4+X5+X6+X7+X8)^2 + X1sq+ X2sq+ X3sq+ X4sq+ X5sq+ X6sq+ X7sq+ X8sq"),as.formula("y ~ X1 + X6 + X7 + X2 + X4 + X3"),4,200,cap=20)

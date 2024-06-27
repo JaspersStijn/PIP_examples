@@ -2,11 +2,11 @@
 # experiments in Nature and Science between
 # 2010 and 2015", Camerer et al. (2018)
 
-# We use the cross validation PIP to check for reproducibility 
+# We use the cross validation PIP to check for reproducibility
 # (cfr. Table 4 in https://arxiv.org/pdf/2405.17064)
 
 
-source("Functions_paper1.R")
+source("R/Functions_paper1.R")
 
 summary_pips = data.frame()
 
@@ -65,8 +65,6 @@ for(i in 1:10000){
   pip_sub = c(pip_sub,fit$PIP_cv)
   pip_sub_lower = c(pip_sub_lower,fit$PIP_cv_lower)
   pip_sub_upper = c(pip_sub_upper,fit$PIP_cv_upper)
-  
-  print(i)
 }
 
 summary_pips = rbind(summary_pips,data.frame(Study = "Wilson et al. (2014)",pval = round(summary(mod)$coef[2,4],4),PIP_lower = quantile(pip_sub,0.025),PIP =mean(pip_sub),PIP_upper = quantile(pip_sub,0.975),Replicated="Yes",PredictionMarket = 0.46, Survey = 0.52))
@@ -95,8 +93,7 @@ for(i in 1:10000){
   pip_sub = c(pip_sub,fit$PIP_cv)
   pip_sub_lower = c(pip_sub_lower,fit$PIP_cv_lower)
   pip_sub_upper = c(pip_sub_upper,fit$PIP_cv_upper)
-  
-  print(i)
+
 }
 
 summary_pips = rbind(summary_pips,data.frame(Study = "Gervais et al. (2012)",pval = round(summary(mod)$coef[2,4],4),PIP_lower = quantile(pip_sub,0.025),PIP =mean(pip_sub),PIP_upper = quantile(pip_sub,0.975),Replicated="No",PredictionMarket = 0.17, Survey = 0.20))
@@ -131,8 +128,7 @@ for(i in 1:10000){
   pip_sub = c(pip_sub,fit$PIP_cv)
   pip_sub_lower = c(pip_sub_lower,fit$PIP_cv_lower)
   pip_sub_upper = c(pip_sub_upper,fit$PIP_cv_upper)
-  
-  print(i)
+
 }
 
 summary_pips = rbind(summary_pips,data.frame(Study = "Balafoutas et al.  (2012)",pval = round(summary(mod)$coef[2,4],4),PIP_lower = quantile(pip_sub,0.025),PIP =mean(pip_sub),PIP_upper = quantile(pip_sub,0.975),Replicated="Yes",PredictionMarket = 0.75, Survey = 0.43))
