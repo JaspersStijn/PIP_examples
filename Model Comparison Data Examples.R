@@ -10,6 +10,9 @@ library(robustbase)
 library(tidyverse)
 library(gridExtra)
 library(ggpubr)
+library(gbm)
+library(caret)
+library(mlbench)
 
 source("Functions.R")
 
@@ -24,8 +27,7 @@ y = stackloss_use$y
 X = as.matrix(stackloss_use[,2:5])
 dat = data.frame(y,X)
 
-# Model selection with PIP
-
+# PIP model selection (cfr. Table 1 in paper The Probability of Improved Prediction as a New Concept for Model Selection in the Presence of Outliers)
 
 formula0 = as.formula(paste("y~",1))
 formula1a = as.formula(paste("y~","X2"))
@@ -74,83 +76,9 @@ print(pips)
 selected = new_mod0
 print(selected)  
 
-
-# Visualisations presentation EMS 
-
-names(dat)[2:5] = paste0('X',c(0,1,2,3))
-dat$id = rownames(dat)
-
-dat  = dat %>% mutate(Outlier = dplyr::case_when(!(dat$id %in% c(1,3,4,21)) ~ "No", 
-                                                 dat$id %in% c(1,3,4,21) ~ "Yes"))
-
-p1b = ggplot(data=dat, aes(x= X1, y= y))+
-  geom_point(aes(shape=Outlier),size=3)+
-  stat_smooth(method=function(formula,data,weights=weight) rlm(formula,
-                                                               data,
-                                                               method="MM"),
-              fullrange=TRUE, aes(colour="Robust MM")) +
-  stat_smooth(method="lm", aes(colour="Least Squares")) +
-  scale_colour_manual(name="Estimators", values=c("blue", "red"))+ theme(legend.title=element_text(size=12),legend.text=element_text(size=12))
-
-
-p2b =ggplot(data=dat, aes(x= X2, y= y))+
-  geom_point(aes(shape=Outlier),size=3)+
-  stat_smooth(method=function(formula,data,weights=weight) rlm(formula,
-                                                               data,
-                                                               method="MM"),
-              fullrange=TRUE, aes(colour="Robust MM")) +
-  stat_smooth(method="lm", aes(colour="Least Squares")) +
-  scale_colour_manual(name="Estimators", values=c("blue", "red"))+ theme(legend.title=element_text(size=12),legend.text=element_text(size=12))
-
-
-
-p3b =ggplot(data=dat, aes(x= X3, y= y))+
-  geom_point(aes(shape=Outlier),size=3)+
-  stat_smooth(method=function(formula,data,weights=weight) rlm(formula,
-                                                               data,
-                                                               method="MM"),
-              fullrange=TRUE, aes(colour="Robust MM")) +
-  stat_smooth(method="lm", aes(colour="Least Squares")) +
-  scale_colour_manual(name="Estimators", values=c("blue", "red"))+ theme(legend.title=element_text(size=12),legend.text=element_text(size=12))
-
-
-g_legend<-function(a.gplot){
-  tmp <- ggplot_gtable(ggplot_build(a.gplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  return(legend)}
-
-mylegend<-g_legend(p1b)
-
-grid.arrange(arrangeGrob(p1b + theme(legend.position="none"),
-                         p2b + theme(legend.position="none"),
-                         p3b + theme(legend.position="none"),
-                         mylegend,
-                         nrow=2))
-
-
-
-mod_robust = rlm(y~X3,data=dat,method="MM",maxit=500)
-mod_ls = lm(y~X3,data=dat)
-
-mean((dat$y-predict(mod_robust))^2)
-mean((dat$y-predict(mod_ls))^2)
-
-median(abs(dat$y-predict(mod_robust)))
-median(abs(dat$y-predict(mod_ls)))
-
-## Comparing Least squares and robust MM modes with PIP, MSE and MAE
-library(caret)
-dat_use = dat[,c("y","X3")]
-names(dat_use)[2] = "x"
-f_measures(dat_use,5,50)
-
-
 # Application 2: Los Angeles Ozone Pollution Data 
 
-library(mlbench)
 data("Ozone")
-
 ozone_use = Ozone%>%mutate(y=V4,X1=V8,X2 =V10,X3=V11,X4=V13,
                            X5=V5 ,X6=V7, X7= V12,X8=V6)%>%
   dplyr::select(all_of(c("y","X1","X2","X3","X4","X5","X6","X7","X8")))%>%drop_na()
@@ -169,7 +97,7 @@ ozone_use = Ozone%>%mutate(y=V4,X1=V8,X2 =V10,X3=V11,X4=V13,
 # 12	Inversion base temperature (degrees F) at LAX
 # 13	Visibility (miles) measured at LAX
 
-# Selected variables CSDA Salibian-Barrera & Van Aelst (2008)
+# Selected variables CSDA Salibian-Barrera & Van Aelst (2008) shown in design below
 
 # 7 predictoren: 1 12 15 27 29 33 43
 # 10 predictoren: 1  8 12 14 17 23 34 40 41 43
@@ -184,6 +112,7 @@ mod23_vars = vars[c(4,  5,  6,  7,  8,  9, 11, 12, 13, 14, 15, 17, 24, 29, 31, 3
 
 design$y=ozone_use$y
 
+# Models and predictions from Salibian-Barrera & Van Aelst (2008)
 mod7_ozone = rlm(as.formula(paste0("y~",paste(mod7_vars,collapse="+"))),data=design ,method="MM",maxit=1000)
 mod10_ozone = rlm(as.formula(paste0("y~",paste(mod10_vars,collapse="+"))),data=design ,method="MM",maxit=1000)
 mod23_ozone = rlm(as.formula(paste0("y~",paste(mod23_vars,collapse="+"))),data=design ,method="MM",maxit=1000)
@@ -202,10 +131,7 @@ plot(preds_mod23,design$y)
 title(paste0("Pearson cor: ",cor(preds_mod23,design$y)))
 
 
-
-
-library(gbm)
-
+# Full linear model
 par(mfrow=c(1,2))
 
 ozone_use_lm = ozone_use%>%mutate(X1sq = X1^2,X2sq = X2^2,X3sq = X3^2,X4sq = X4^2,X5sq = X5^2,X6sq = X6^2,
@@ -222,7 +148,7 @@ plot(preds_gbm,ozone_use$y,col="red")
 title(paste0("Pearson cor: ",cor(preds_gbm,ozone_use$y)))
 
 
-# PIP model selection
+# PIP model selection (cfr. Table 2 in paper The Probability of Improved Prediction as a New Concept for Model Selection in the Presence of Outliers)
 
 # Stage 1 models
 
@@ -243,7 +169,7 @@ set.seed(1988)
 for(mod in c(formula1a,formula1b,formula1c,formula1d,formula1e,formula1f,formula1g,formula1h)){
   pips = c(pips,mean(PIP_stratified_bs_gbm(ozone_use,K,formula0,mod,4,200)$pip_bs))
 }
-print(pips)
+print(pips) # X1 added
 
 
 # Stage 2 models
@@ -263,7 +189,7 @@ pips = c()
 for(mod in c(formula2b,formula2c,formula2d,formula2e,formula2f,formula2g,formula2h)){
   pips = c(pips,mean(PIP_stratified_bs_gbm(ozone_use,K,formula1a,mod,4,200)$pip_bs))
 }
-print(pips)
+print(pips) # X6 added
 
 # Stage 3 models
 formula3b = as.formula(paste("y~","X1+X6+X2"))
@@ -281,7 +207,7 @@ pips = c()
 for(mod in c(formula3b,formula3c,formula3d,formula3e,formula3g,formula3h)){
   pips = c(pips,mean(PIP_stratified_bs_gbm(ozone_use,K,formula2f,mod,4,200)$pip_bs))
 }
-print(pips)
+print(pips) # X7 added
 
 
 # Stage 4 models
@@ -299,7 +225,7 @@ pips = c()
 for(mod in c(formula4b,formula4c,formula4d,formula4e,formula4h)){
   pips = c(pips,mean(PIP_stratified_bs_gbm(ozone_use,K,formula3g,mod,4,200)$pip_bs))
 }
-print(pips)
+print(pips) # X2 added
 
 
 # Stage 5 models
@@ -315,7 +241,7 @@ pips = c()
 for(mod in c(formula5c,formula5d,formula5e,formula5h)){
   pips = c(pips,mean(PIP_stratified_bs_gbm(ozone_use,K,formula4b,mod,4,200)$pip_bs))
 }
-print(pips)
+print(pips) # X4 added
 
 # Stage 6 models
 formula6c = as.formula(paste("y~","X1+X6+X7+X2+X4+X3"))
@@ -329,7 +255,7 @@ pips = c()
 for(mod in c(formula6c,formula6e,formula6h)){
   pips = c(pips,mean(PIP_stratified_bs_gbm(ozone_use,K,formula5d,mod,4,200)$pip_bs))
 }
-print(pips)
+print(pips) # X3 added
 
 # Stage 7 models
 formula7e = as.formula(paste("y~","X1+X6+X7+X2+X4+X3+X5"))
@@ -342,16 +268,16 @@ pips = c()
 for(mod in c(formula7e,formula7h)){
   pips = c(pips,mean(PIP_stratified_bs_gbm(ozone_use,K,formula6c,mod,4,200)$pip_bs))
 }
-print(pips)
+print(pips) # no further additions 
 
 ## Selected model
-
+par(mfrow=c(1,2))
 set.seed(1988)
 mod_ozone = gbm(y~X1+X2+X3+X4+X6+X7,data=ozone_use,distribution = "laplace",interaction.depth = 2,n.trees=5000)
 preds_gbm = predict(mod_ozone,ozone_use,n.trees=mod_ozone$n.trees)
 plot(preds_gbm,ozone_use$y,col="red")
 title(paste0("Pearson cor: ",cor(preds_gbm,ozone_use$y)))
-summary.gbm(mod_ozone)
+#summary.gbm(mod_ozone)
 
 set.seed(1988)
 mod_ozone_compare = gbm(as.formula(paste0("X~",paste(vars[c(2,7,8,3,5,4)],collapse = "+"))),data=design,distribution = "laplace",interaction.depth = 2,n.trees=5000)
@@ -360,116 +286,14 @@ plot(preds_gbm_compare,design$x,col="red")
 title(paste0("Pearson cor: ",cor(preds_gbm_compare,design$X)))
 
 
-
-# Compare full linear model with selected GBM
+# Compare full linear model with selected GBM 
 
 set.seed(1988)
 comp_linear_gbm = PIP_stratified_bs_robust_vs_gbm(ozone_use_lm,K,as.formula("y~(X1+X2+X3+X4+X5+X6+X7+X8)^2 + X1sq+ X2sq+ X3sq+ X4sq+ X5sq+ X6sq+ X7sq+ X8sq"),as.formula("y ~ X1 + X6 + X7 + X2 + X4 + X3"),4,200,cap=20)
-mean(comp_linear_gbm$pip_bs)
+mean(comp_linear_gbm$pip_bs) # GBM model is better in 57% of made predictions
 mean(comp_linear_gbm$mse0)
 mean(comp_linear_gbm$mse1)
 mean(comp_linear_gbm$tmse0)
 mean(comp_linear_gbm$tmse1)
 
-
-
-
-
-
-
-
-
-
-
-library(caret)
-
-set.seed(1988)
-
-data <-ozone_use_lm[sample(nrow(ozone_use_lm)),]
-cvIndex <- createFolds(data$y, 5, returnTrain = T)
-
-
-TMSE1 = c()
-TMSE2 = c()
-
-for(j in names(cvIndex)){
-  trainData = data[cvIndex[[j]],]
-  testData = data[-cvIndex[[j]],]
-  mod1 = rlm(y~(X1+X2+X3+X4+X5+X6+X7+X8)^2 + X1sq+ X2sq+ X3sq+ X4sq+ X5sq+ X6sq+ X7sq+ X8sq,data=trainData ,method="MM",maxit=1000)
-  pred1 = predict(mod1,newdata=testData) 
-  #scale=mad(trainData$y-predict(mod1))
-  
-  # trimmed_squares1 = (pred1 - testData$y)^2
-  # trimmed_squares1[which(trimmed_squares1>50)] = 50
-  
-  trimmed_squares1 = apply(cbind((pred1 - testData$y)^2/(scale^2),4),1,min)
-  
-  
-  mod2 = gbm(y ~ X1 + X6 + X7 + X2 + X4 + X3,data=trainData,distribution = "laplace",interaction.depth = 2,n.trees=500)
-  pred2 = predict(mod2,newdata=testData,n.trees=mod2$n.trees) 
-  
-  #scale=mad(trainData$y-predict(mod2))
-  
-  # trimmed_squares2 = (pred2 - testData$y)^2
-  # trimmed_squares2[which(trimmed_squares2>50)] = 50
-  
-  trimmed_squares2 = apply(cbind((pred2 - testData$y)^2/(scale^2),4),1,min)
-  
-  
-  TMSE1 = c(TMSE1,mean(trimmed_squares1))
-  TMSE2 = c(TMSE2,mean(trimmed_squares2))
-}
-
-
-mean(TMSE1);mean(TMSE2)
-
-data <-design[sample(nrow(design)),]
-cvIndex <- createFolds(data$y, 5, returnTrain = T)
-
-
-TMSE1 = c()
-TMSE2 = c()
-TMSE3 = c()
-
-for(j in names(cvIndex)){
-  trainData = data[cvIndex[[j]],]
-  testData = data[-cvIndex[[j]],]
-  mod1 = rlm(as.formula(paste0("y~",paste(mod7_vars,collapse="+"))),data=trainData ,method="MM",maxit=1000)
-  pred1 = predict(mod1,newdata=testData) 
-  #scale=mad(trainData$y-predict(mod1))
-  
-  # trimmed_squares1 = (pred1 - testData$y)^2
-  # trimmed_squares1[which(trimmed_squares1>50)] = 50
-  
-  trimmed_squares1 = apply(cbind((pred1 - testData$y)^2/(scale^2),4),1,min)
-  
-  
-  mod2 = rlm(as.formula(paste0("y~",paste(mod10_vars,collapse="+"))),data=trainData ,method="MM",maxit=1000)
-  pred2 = predict(mod2,newdata=testData) 
-  
-  #scale=mad(trainData$y-predict(mod2))
-  
-  # trimmed_squares2 = (pred2 - testData$y)^2
-  # trimmed_squares2[which(trimmed_squares2>50)] = 50
-  
-  trimmed_squares2 = apply(cbind((pred2 - testData$y)^2/(scale^2),4),1,min)
-  
-  mod3 = rlm(as.formula(paste0("y~",paste(mod23_vars,collapse="+"))),data=trainData ,method="MM",maxit=1000)
-  pred3 = predict(mod3,newdata=testData) 
-  
-  #scale=mad(trainData$y-predict(mod3))
-  
-  # trimmed_squares2 = (pred2 - testData$y)^2
-  # trimmed_squares2[which(trimmed_squares2>50)] = 50
-  
-  trimmed_squares3 = apply(cbind((pred3 - testData$y)^2/(scale^2),4),1,min)
-  
-  
-  TMSE1 = c(TMSE1,mean(trimmed_squares1))
-  TMSE2 = c(TMSE2,mean(trimmed_squares2))
-  TMSE3 = c(TMSE2,mean(trimmed_squares3))
-  
-}
-
-mean(TMSE1);mean(TMSE2);mean(TMSE3)
 
