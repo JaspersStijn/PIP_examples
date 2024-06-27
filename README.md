@@ -3,9 +3,9 @@
 This repository contains R code related to the probability of improved prediction (PIP), which is a newly introduced statistical concept for model comparison. In general, the PIP is a probabilistic measure for directly comparing two competing models. Based on a user-defined loss function, this is achieved by quantifying the frequency of instances 
 that one model gives better predictions than the other model. 
 
-Two papers were prepared, for which this repository contains the R code related to their respective data examples.
+Two papers were prepared, for which this repository contains the R code related to their respective data examples. 
 
-# Paper 1: 'The Probability of Improved Prediction: a new concept in statistical inference'  
+# Paper 1: The Probability of Improved Prediction: a new concept in statistical inference 
 
 Paper is available on arXiv: https://arxiv.org/abs/2405.17064
             
@@ -13,7 +13,7 @@ Paper is available on arXiv: https://arxiv.org/abs/2405.17064
 * R file "Reproducibility papers.R" shows an application and outputs Table 4 of the paper
 
 
-# Paper 2: 'The Probability of Improved Prediction as a New Concept for Model Selection in the Presence of Outliers' 
+# Paper 2: The Probability of Improved Prediction as a New Concept for Model Selection in the Presence of Outliers 
 Paper is currently submitted
 
 * R file "Functions_paper2.R" contains the required methodology for performing model comparison using the PIP, calculated using m out of n bootstrapping.
